@@ -37,3 +37,6 @@ vignettes/*.pdf
 # the below folder contained the data, but I don't want to upload it to github, so I just ignore it
 
 Givens_Data/*
+
+#Ignore pdf outputs of R Markdown
+*.pdf
