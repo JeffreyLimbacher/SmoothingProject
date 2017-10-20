@@ -193,7 +193,3 @@ $$
 ```{r csplot, echo=FALSE, message=FALSE, warning=FALSE}
 ```
 
-# Cubic Spline Cross-Validation
-
-```{r}
-```
