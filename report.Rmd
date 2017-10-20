@@ -1,0 +1,247 @@
+---
+title: "Linear Smoothing"
+author: "Jeffrey Limbacher"
+date: "May 19, 2017"
+output: 
+  bookdown::pdf_document2:
+    toc: FALSE
+bibliography: reportbib.bib
+csl: bit-numerical-mathematics.csl
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE, out.width='70%', fig.asp=.75, fig.width=10, fig.align='center')
+knitr::read_chunk('code_chunks.R')
+```
+
+# Introduction
+
+
+```{r setup}
+```
+
+```{r plotdata, fig.cap="Example predictor response data." }
+```
+
+
+
+Suppose we have $n$ observations of a random variable $Y$ dependent on random variable $X$ in the form of $n$ ordered pairs, $\{(x_i,y_i)\}_{i=1}^n$. We assume that $x_1 \leq \dots \leq x_n$. Figure \@ref(fig:plotdata) gives an example of such data (data taken from [@givens]). When working with the data in figure \@ref(fig:plotdata), it may be desirable to find a curve that best fits to the data. It is easy for us to intuit a good curve through this data. However, it would be difficult to describe exactly how it was done or to generalize it to other data sets. This is where the techniques of *smoothing* would come in.
+
+For our data, we will refer to the $X$ as the predictor variable, and $Y$ as the response variable. We will assume a model of $Y_i = s(x_i) + \epsilon_i$ with $E(\epsilon_i)=0$ and $\text{Var}(\epsilon_i)=\sigma^2$ [@yee]. Smoothing is a variety of techniques used to best approximate $s(x)$. We denote estimates of $s(x)$ by $\hat{s}(x)$. Note that $E(Y|x)=s(x)$ implies that the conditional means of the data are good estimates of the data. 
+
+## Smoothing vs. Regression: What's the difference?
+
+Smoothing is also known as *non-parametric regression* [@givens]. It is called non-parametric because there is no model assumed. Typically, regression involves a model with unknown parameters, $\mathbf{\beta}$. 
+
+In general, regression is written as $\mathbf{Y}=f(\mathbf{X},\mathbf{\beta})$ where $\mathbf{Y}$ is a vector of the response variables $\mathbf{X}$ is a matrix of the independent variables, and $\mathbf{\beta}$ is a vector of parameters to be estimated. However, $f$ is not estimated in this model; it is assumed based on the problem. Regression invovles estimating the $\mathbf{\beta}$ to fit the data to this $f$. Regression is model-driven whereas smoothing is data-driven [@yee].
+
+But what if we do not have any idea what $f$ might be or look like? Smoothing attempts to solve this problem by eliminating $\mathbf{\beta}$ and estimating $f$ itself rather than assuming its form. 
+
+# Smoothing
+
+We wish to estimate $Y|x$ where $X=x$. We assume that $Y = s(x) + \epsilon_i$ where $s(x)$ is assumed to be a smooth function of $x$ . This implies $E(Y|x)=s(x)$. In otherwords, we can use the conditional means of the data to estimate $s(x)$. We denote the estimate of $s(x)$ by $\hat{s}(x)$. 
+
+## Symmetric Nearest Neighborhood
+
+A valuable tool in smoothing is the *symmetric nearest neighborhood* . Recall that the $x_i$ are assumed to be sorted. The symmetric nearest neighbor is defined as 
+\begin{equation}
+\mathcal{N}(x_i) =\{x_j | \max(1,i-\frac{k-1}{2}) \leq j \leq \min(n, i+\frac{k-1}{2})\}
+(\#eq:snn)
+\end{equation}
+$\mathcal{N}(x_i)$ is simply the $k$ $x_j$ that are closest to $x_i$. The $k$ is referred to the *span* of the neighborhood and is selected to be odd [@givens]. It is symmetric because if we pick sufficiently central $i$, then we will have $x_i$ be the middle most index.
+
+Typcically, this set is going to contain $k$ elements including $x_i$. However, looking closely at the \@ref(eq:snn), we can see that if there are not $\frac{k-1}{2}$ elements above or below $x_i$, we truncate the set so that we only include indices within the set. We can see this in the examples below. Not all sets contain $k$ elements. 
+
+Some examples of this are, $\mathcal{N}_5(x_5)= \{x_3,x_4,x_5,x_6,x_7\}$, $\mathcal{N}_5(x_1)= \{x_1,x_2,x_3\}$, and $\mathcal{N}_7(x_3)= \{x_1,x_2,x_3,x_4,x_5,x_6\}$. We can see that $|\mathcal{N}_5(x_5)| = 5$ thus contains the maximum number of elements. $|\mathcal{N}_5(x_1)|=3<5$. so we had to truncate the neighborhood. 
+
+## Linear Smoothers
+
+Note that the general linear regression model can be written 
+$$
+\mathbf{\hat{Y}}=\mathbf{X}(\mathbf{X}^\mathsf{T} \mathbf{X})^{-1} \mathbf{X}^\mathsf{T}\mathbf{Y}
+$$
+Note that $\mathbf{X}(\mathbf{X}^\mathsf{T} \mathbf{X})^{-1} \mathbf{X}^\mathsf{T}$ is just a matrix that depends only on the data. Multiplying this matrix times the the vector $\mathbf{Y}$ gives us our linear estimate $\mathbf{\hat{Y}}$. We can interpret $\mathbf{\hat{Y}}$ as $\mathbf{\hat{Y}} = \mathbf{\hat{s}} = (\hat{s}(x_1), \dots, \hat{s}(x_n))^\mathsf{T}$. Thus $\mathbf{\hat{Y}}$ stores $\hat{s}(x)$ at the $n$ predictor variables, $x_1, \dots, x_n$. This is what motivates our definition of linear smoothers.
+
+A *linear smoother* is a smoother than can be written in the form
+
+\begin{equation}
+\mathbf{\hat{Y}}=\mathbf{S}\mathbf{Y}
+(\#eq:linsmoother)
+\end{equation}
+where $\mathbf{S}$ is a $n \times n$ matrix whose entries do not depend on $\mathbf{Y}$ [@givens]. The $\mathbf{S}$ is referred to as the *smoothing matrix* [@givens].
+
+Note that a linear smoother is just a linear combination of the $y_i$ values. The first linear smoother I will discuss is the running mean
+
+# Constant Span Running Mean
+
+The constant span running mean takes the average of the elements of $\mathcal{N}_k(x_i)$ in order to estimate $\hat{s}(x_i)$. We can write this more formally as
+
+\begin{equation}
+\hat{s}(x_i) = \frac{1}{\left| \mathcal{N}_k(x_i) \right|} \sum_{x_j \in \mathcal{N}_k(x_i)} y_j
+(\#eq:rmdef)
+\end{equation}
+
+It turns out we can write a smoothing matrix for this operation. Let's take $k=5$ and $n=10$ for a motivating example. Then we can write the running mean as 
+
+\begin{equation*}
+\begin{pmatrix}
+\hat{s}(x_1) \\ \hat{s}(x_2) \\ \hat{s}(x_3) \\ \hat{s}(x_4) \\ \hat{s}(x_5) \\ \hat{s}(x_6) \\ \hat{s}(x_7) \\ \hat{s}(x_8) \\ \hat{s}(x_9) \\ \hat{s}(x_{10})
+\end{pmatrix}
+= 
+\begin{pmatrix}
+\frac{1}{3} & \frac{1}{3} & \frac{1}{3} & 0 & 0 & 0 & 0 & 0 & 0 & 0 \\
+\frac{1}{4} & \frac{1}{4} & \frac{1}{4} & \frac{1}{4} & 0 & 0 & 0 & 0 & 0 & 0 \\
+\frac{1}{5} & \frac{1}{5} & \frac{1}{5} & \frac{1}{5} & \frac{1}{5} & 0 & 0 & 0 & 0 & 0\\
+0 & 0 & \frac{1}{5} & \frac{1}{5} & \frac{1}{5} & \frac{1}{5} &\frac{1}{5} & 0 & 0 & 0 \\
+0 & 0 & 0 & \frac{1}{5} & \frac{1}{5} & \frac{1}{5} & \frac{1}{5} &\frac{1}{5} & 0 & 0 \\
+0 & 0 & 0 & 0 & \frac{1}{5} & \frac{1}{5} & \frac{1}{5} & \frac{1}{5} &\frac{1}{5} & 0 \\
+0 & 0 & 0 & 0 & 0 & \frac{1}{5} & \frac{1}{5} & \frac{1}{5} & \frac{1}{5} &\frac{1}{5}  \\
+0 & 0 & 0 & 0 & 0 & 0 & \frac{1}{4} & \frac{1}{4} & \frac{1}{4} &\frac{1}{4}  \\
+0 & 0 & 0 & 0 & 0 & 0 & 0 & \frac{1}{3} & \frac{1}{3} &\frac{1}{3}  \\
+\end{pmatrix}
+\begin{pmatrix}
+y_1 \\ y_2 \\ y_3 \\y_4 \\ y_5 \\ y_6 \\ y_7 \\ y_8 \\ y_9 \\ y_{10}
+\end{pmatrix}
+(\#eq:rmmat)
+\end{equation*}
+
+We can see that if we were to simply calculate $\hat{s}(x_1)$, then we would get $\frac{1}{3}(y_1 + y_2 + y_3)$ which agrees with  \@ref(eq:rmdef) [@article]. 
+
+Now that we have the formal definition of running mean, we can implement is as below
+
+```{r rmimpl, echo=TRUE}
+```
+
+The above code works by construction the smoothing matrix seen in \@ref(eq:rmmat) line by line. The `for(i in 1:n)` loops through every $x_i$. The line `left=max(1,(i-(k-1)/2));right=min(n,(i+(k-1)/2))` finds the $x_j \in \mathcal{N}_k(x_i)$. We can see the similarities between that line of code and \@ref(eq:snn). It then constructs the matrix by adding $1/|\mathcal{N}_k(x_i)|$ in the appropriate indices of the `S` matrix. 
+
+(ref:rm13plotcap) A graph of the constant span running mean with $k=13$ using the data seen in figure \@ref(fig:plotdata).
+
+```{r rm13plot, fig.cap="(ref:rm13plotcap)"}
+```
+
+Figure \@ref(fig:rm13plot) shows a graph of the running mean plotted against the data in \@ref(fig:plotdata). The true curve is $s(x)=x^3 \sin((x+3.4)/2))$. Note how the running mean is quite jagged but does follow the line appropriately. We can see that the running mean has significant error in the ends of the data. This makes sense we are truncating towards the ends and using more data to one side of the points $x_1$ and $x_n$. We also see error towards the center since the data seems to have  slight bias in the middle. 
+
+# Span Selectioon in Linear Smoothers
+
+Notice that in our discussion of the running mean, it was not obvious how the $k$ was chosen. The span parameter is important for controlling the qualitative feel of our $\hat{s}(x)$ and quantitative effects such as reducing the mean squared error. While the choice of the $k$ is somewhat arbitrary, we would like to which one is *best*. In the next section, I discuss the effect that $k$ has on the overall qualitative appearance of the smoother, and then I discuss a simple procedure for choosing the best $k$.
+
+## The Effect of Span
+
+We are free to choose $k$. But we would like to know how this affects the running mean. We can write out the mean squared error for the running mean as 
+
+\begin{equation}
+\text{MSE}(\hat{s}(x_i))=E \left( \left( s(x_i) - \sum_{j=i-(k-1)/2}^{i+(k-1)/2} \frac{Y_j}{k} \right)^2 \right)
+(\#eq:mse)
+\end{equation}
+Using the identity that $\text{MSE}(\hat{\theta})=\text{Var}(\hat{\theta}) + \text{Bias}^2(\hat{\theta})$, then we can write \@ref(eq:mse) as [@givens] 
+\begin{equation}
+\text{Bias}^2(\hat{s}(x)) + \text{Var} \left(\sum_{j=i-(k-1)/2}^{i+(k-1)/2} \frac{Y_j}{k} \Biggr| X=x \right)\\
+= \text{Bias}^2(\hat{s}(x)) + \frac{1}{k^2} \sum_{j=i-(k-1)}^{i+(k-1)/2} \text{Var}(Y_j|X=x)
+\end{equation}
+
+We can see from this equation that if we increase $k$, that we decrease the variance from the $Y$ terms. However, this means that we are increasing the bias of $\hat{s}(x_i)$. This is because we are adding more terms that are far away from $x_i$, thus reducing the accuracy of our estimate of $E(Y|x)$. We in fact are biasing towards $E(Y)$ since we are getting closer to averaging over all the $Y$ values when $k$ is increased.
+
+We can visualize this phenomenon by comparing the lines produced by different values of $k$. Figure \@ref(fig:comparespan) shows this trade off by graphing $k=3$ and $k=49$. The different values of $k$ produce very different results. We can see that the $k=3$ case is much wigglier than the $k=49$ case. However, the $k=49$ has much more persistent error, especially around dips and turns. 
+
+(ref:comparespancap) Comparing the running mean with $k=3$ and $k=49$. 
+
+```{r comparespan, echo=FALSE, fig.cap="(ref:comparespancap)"}
+```
+
+## Choosing $k$
+
+We would like to select a $k$ that would minimize the error within our curve. A natural thing to do is to minimize the mean residual sum of squares [@givens]:
+
+\begin{equation}
+\frac{\text{RSS}(\mathbf{\hat{s}})}{n}=\frac{1}{n} \sum_{i=1}^n (Y_i - \hat{s}(x_i))^2
+(\#eq:rss)
+\end{equation}
+
+In order to understand this, I introduce the mean squared prediction error (MSPE) at $x^*$ introduced by [@givens]:
+
+\begin{equation}
+\text{MSPE}(\hat{s}(x^*))=E \left( (Y-\hat{s}(x))^2 | X = x^* \right) = \text{Var}(Y | X =x^*) + \text{MSE}(\hat{s}(x^*))
+\end{equation}
+
+This can be interpreted as the expected error of predicting $Y$ from $\hat{s}(x)$. Over a dataset, a good measure of the quality of our estimator is 
+
+\begin{equation}
+\overline{\text{MSPE}}(\mathbf{\hat{s}}) = \frac{1}{n} \sum_{i=1}^n \text{MSPE}(\hat{s}(x_i))
+\end{equation}
+
+Thus we would expect \@ref(eq:rss) to be a good estimator of \text{MSPE}. However, taking the expectation of \@ref(eq:rss) reveals that this might not be a good choice of estimator.
+
+\begin{align*}
+E \left(\frac{\text{RSS}(\mathbf{\hat{s}})}{n} \right) &= E\left(\frac{1}{n} \sum_{i=1}^n (Y_i - \hat{s}(x_i))^2 \right)\\
+&= \overline{\text{MSPE}}(\hat{s}) - \frac{1}{n} \sum_{i \neq j} \text{cov}(Y_i,\hat{s}(x_j))
+\end{align*}
+
+Thus we are estimating $\overline{\text{MSPE}}(\hat{s})$ downward. However, if we omit the $i$th point when calculating the smooth, we could eliminate the correlation term. Denote $\hat{s}^{(\text{-}i)}(x_i)$ the value of smooth at $x_i$ where we removed the point $x_i$ when calculating $\hat{s}(x_i)$. Then a better (but still biased; it is pessimistic) estimator of $\overline{\text{MSPE}}(\hat{s})$ is the *cross-validated residual sum of squares*:
+
+\begin{equation}
+\frac{\text{CVRSS}(\mathbf{\hat{s}})}{n}=\frac{1}{n} \sum_{i=1}^n  \left( y_i - \hat{s}^{(\text{-}i)}(x_i) \right)^2
+(\#eq:cvrss)
+\end{equation}
+
+Now we have something to estimate the error with. We can perform *cross-validation*. We pick many $k$'s, usually in a sequence, and calculate the CVRSS for each $k$. We can then choose the $k$ with the lowest CVRSS. 
+
+One way to visualize the effect is to simply plot the CVRSS versus $k$ as shown in figure \@ref(fig:cvplot). Notice that the CVRSS is minimized at $k=13$. This is $k$ can be found in figure \@ref(fig:rm13plot). Also notice how in figure \@ref(fig:comparespan), I chose $k=3$ and $k=49$. These two choices are quantitatively similar since they have very similar CVRSS as we can see from figure \@ref(fig:cvplot). However, they have very different qualitative feels due to the difference in variance and bias in the two plots. 
+
+```{r cvplot, echo=FALSE ,fig.cap="A graph of the CVRSS of a running mean"}
+```
+
+### Calculating CVRSS
+
+Recalculating $\hat{s}^{(\text{-}i)}(x_i)$ for each $x_i$ to calculate the CVRSS would be very inefficient. However, since we are working with linear smoothers, we can find a simpler way to calculate them. Consider the entries of $\mathbf{S}$ as weights such that $\sum_{j=0}^n S_{ij} = 0$. We can set $S_{ii}=0$, then we will have not used $x_i$ to calculate $\mathbf{\hat{s}}$. However, $\sum_{j=0}^n S_{ij} = 0$ no longer holds, so we can renormalize it by dividing by $1 - S_{ii}$. This gives us our new calculation
+
+\begin{equation}
+\hat{s}^{(\text{-}i)}(x_i) = \sum_{\substack{j=1 \\ j\neq i}}^n \frac{Y_j S_{ij}}{1-S_{ii}}
+(\#eq:cvrsseff)
+\end{equation}
+
+If we plug \@ref(eq:cvrsseff) into \@ref(eq:cvrss), then we get 
+
+\begin{align}
+\frac{\text{CVRSS}(\mathbf{\hat{s}})}{n}&= \frac{1}{n} \sum_{i=1}^n \left( y_i - \sum_{\substack{j=1 \\ j\neq i}}^n \frac{y_j S_{ij}}{1-S_{ii}} \right) \nonumber \\
+&= \frac{1}{n} \sum_{i=1}^n \left( \frac{y_i - y_i S_{ii}}{1-S_{ii}} - \sum_{\substack{j=1 \\ j\neq i}}^n \frac{y_j S_{ij}}{1-S_{ii}} \right)^2 \nonumber \\
+&= \frac{1}{n} \sum_{i=1}^n \left( \frac{y_i - \sum_{j=1}^n y_j S_{ij}}{1-S_{ii}} \right)^2 \nonumber \\
+&= \frac{1}{n} \sum_{i=1}^n \left( \frac{y_i - \hat{s}(x_i)}{1-S_{ii}} \right)^2
+(\#eq:easycv)
+\end{align}
+Now we have a much simpler way to calculate the cross validated residual sum of squares that does not require changing our smooth. Below is the function that is used to calculate the CVRSS of the running mean. Note that this function has a similar running time to the running mean.
+
+```{r docvcode, echo=TRUE}
+```
+
+# Running Lines and Running Polynomials
+
+Recall that we started the discussion dicussing linear regression. Linear regression can also be performed locally. Running lines are more difficult to compute than the running mean, but have advantages by being much smoother and being less susceptible to variance. It also performs better towards the ends of the data.
+
+To perform the running line regression, we simply perform the linear least squares to the elements in $\mathcal{N}(x_i)$ to get a line estimator $\ell_i(x) = \overline{Y}_i + \hat{\beta}_i(x-\overline{x}_i)$. We then set $\hat{s}(x_i)=\ell_i(x_i)$. 
+
+To calculate the running line, we use an analog to the $\mathbf{X}$ matrix used in linear regression. Instead of taking all data points, we define $\mathbf{X}_i= ( \mathbf{1} \ \ \mathbf{x}_i)$ where $\mathbf{1}$ is a column of ones, and $\mathbf{x_i}$ is a column vector of the predictor data in $\mathcal{N}(x_i)$. Then create a matrix $\mathbf{H}_i = \mathbf{X}_i\left( \mathbf{X}_i^\mathsf{T} \mathbf{X}_i \right)^{-1} \mathbf{X}_i^\mathsf{T}$. We then select the row that corresponds to $x_i$ (for example, if $i=10$, $k=5$, then we would select the third row $\mathbf{H}_i)$) as our $i$th row of $S$. This can be understood by following the code below
+
+```{r rlimpl, echo=TRUE}
+```
+
+A plot of the running line with $k=23$ selected by cross-validation is plotted in figure \@ref(fig:rlplot).
+
+```{r rlplot, echo=FALSE, fig.cap="Example of a running line."}
+```
+
+A plot of the cross-validation (calculated using \@ref(eq:easycv)) is plotted in figure \@ref(fig:rlcvplot).
+
+```{r rlcvplot, echo=FALSE, fig.cap="The cross-validation versus k for the running line"}
+```
+
+Note that the method for extending the running line to polynomials is easily done by simply redefining $\mathbf{X}_i = ( \mathbf{1} \ \ \mathbf{x}_i \ \dots \ \mathbf{x}_i^n)$ where $\mathbf{x}_i^n$ is a column vector $x_i^n$ . This is easily extended to any $n$. However, higher orders than simply linear do not provide much benefit.
+
+# Closing Remarks
+
+Smoothing is a technique that allows us to roughly estimate the conditional means of the data. Given data that satisfies $Y=s(x) + \epsilon_i$ where $s(x)$ is smooth with $E(\epsilon_i)$ and $\text{Var}(\epsilon_i)=\sigma_i^2$, then we can perform smoothing. Different classes of smoothers exist. I chose to focus on linear smoothers of the form $\mathbf{\hat{s}} = \mathbf{SY}$. In other words, we can write the smoother as a linear combination of the data.
+
+Each smoother relies off some sort of parameter that controls what data constitutes local. In our case, we referred to this as the span. The span has a natural trade off between the smoothness and the jaggedness of the smoothing estimate. The span can be selected by the investigator via cross-validation to minimize the mean squared error. Plotting the CVRSS versus the span allows one to see the trade offs of selecting different $k$.
+
+There are more linear smoothers that extend beyond the scope of this report, such as kernel smoothers, cubic splines, and smoothers that extend past 2-dimensional data. 
+
+#References

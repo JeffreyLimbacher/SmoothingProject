@@ -1,0 +1,199 @@
+---
+title: "Linear Scatterplot Smoothing"
+author: "Jeffrey Limbacher"
+date: "May 17, 2017"
+output: 
+  beamer_presentation:
+    theme: "Malmoe"
+---
+
+```{r echo=FALSE}
+knitr::opts_chunk$set(echo = FALSE,
+                      width = 10)
+knitr::read_chunk('code_chunks.R')
+```
+
+```{r setup}
+```
+
+# Curve-Fitting
+
+```{r plotdata, echo=FALSE, eval=TRUE}
+```
+
+# Curve-Fitting
+
+- Given a set of $n$ bivariate data points, $(x_i,y_i)$, $i=1, \dots, n$ where $x_i$ is the predictor and $y_i$ is a response variable, we wish to find a curve that approximates $Y|x$.  
+- Regression forces us to choose a model with parameters, $\mathbf{\beta}$.
+$$\mathbf{\hat{Y}} = f(\mathbf{X},\mathbf{\beta})$$
+
+- Instead of estimating $\mathbf{\beta}$, we estimate $f$.
+- *Smoothing* attempts to approximate $f$.
+
+
+# Statistical Model
+
+- We assume $Y=s(x)+\epsilon_i$ with $E(\epsilon_i)=0$ and $\text{Var}(\epsilon_i) = \sigma^2$.
+- We wish to find an estimate of $s(x)$, which we denote by $\hat{s}(x)$.
+- Note that $E(Y|x)=s(x)$. 
+  - We can estimate $s(x)$ using the conditional means of the data.
+  - Use data to suggest the correct value *locally*.
+
+# Symmetric Nearest Neighborhood
+
+- A helpful tool in smoothing is the *symmetric nearest neighborhood*:
+$$\mathcal{N}_k(x_i) = \{x_j | \max(1,i-\frac{k-1}{2}) \leq j \leq \min(n, i+\frac{k-1}{2})\}$$
+    - $k$ is referred to as the span. 
+    - $k$ is chosen to be odd. 
+- Examples 
+    - $\mathcal{N}_5(x_5)= \{x_3,x_4,x_5,x_6,x_7\}$
+    - $\mathcal{N}_5(x_1)= \{x_1,x_2,x_3\}$
+    - $\mathcal{N}_7(x_3)= \{x_1,x_2,x_3,x_4,x_5,x_6\}$
+
+# Linear Smoothers: Motivation
+
+
+- We are familiar with the General Linear Model
+$$
+\mathbf{Y} =  \mathbf{X} \mathbf{\beta}
+$$
+which has optimal solution 
+$$
+\mathbf{\hat{Y}}=\mathbf{X}(\mathbf{X}^\mathsf{T} \mathbf{X})^{-1} \mathbf{X}^\mathsf{T}\mathbf{Y}
+$$
+- $\mathbf{X}(\mathbf{X}^\mathsf{T} \mathbf{X})^{-1} \mathbf{X}^\mathsf{T}$ does not depend on $\mathbf{Y}$, only the $x_i$. 
+
+# Linear Smoothers
+
+- *Linear smoothers* are linear combinations of the response variables.
+- In other words, we can write the smoother as $\mathbf{\hat{s}}=\mathbf{S}\mathbf{Y}$ 
+    - $\mathbf{Y}=(y_1,\dots, y_n)^\mathsf{T}$
+    - $\mathbf{\hat{s}}=(\hat{s}(x_1), \dots, \hat{s}(x_n))^\mathsf{T}$
+    - $\mathbf{S}$ is an $n \times n$ *smoothing matrix* whose entries do not depend on $\mathbf{Y}$.
+    
+# Linear Smoother: Running Mean 
+- Take the average of the the $y_j$ with $x_j \in \mathcal{N}_k(x_i)$:
+$$\hat{s}(x_i) = \frac{1}{\left| \mathcal{N}_k(x_i) \right|} \sum_{x_j \in \mathcal{N}_k(x_i)} y_j$$
+- $\hat{s}(x_i)=\text{mean} \left( \{ y_j | x_j \in \mathcal{N}_k(x_i)\} \right)$.
+- Interpolate linearly between the $\hat{s}(x_i)$.
+
+
+# Example Running Mean Smoothing Matrix
+
+- If $k=5$ and $n=10$, we can write $\mathbf{S}$ as 
+$$
+\begin{pmatrix}
+\hat{s}(x_1) \\ \hat{s}(x_2) \\ \hat{s}(x_3) \\ \hat{s}(x_4) \\ \hat{s}(x_5) \\ \hat{s}(x_6) \\ \hat{s}(x_7) \\ \hat{s}(x_8) \\ \hat{s}(x_9) \\ \hat{s}(x_{10})
+\end{pmatrix}
+= 
+\begin{pmatrix}
+\frac{1}{3} & \frac{1}{3} & \frac{1}{3} & 0 & 0 & 0 & 0 & 0 & 0 & 0 \\
+\frac{1}{4} & \frac{1}{4} & \frac{1}{4} & \frac{1}{4} & 0 & 0 & 0 & 0 & 0 & 0 \\
+\frac{1}{5} & \frac{1}{5} & \frac{1}{5} & \frac{1}{5} & \frac{1}{5} & 0 & 0 & 0 & 0 & 0\\
+0 & 0 & \frac{1}{5} & \frac{1}{5} & \frac{1}{5} & \frac{1}{5} &\frac{1}{5} & 0 & 0 & 0 \\
+0 & 0 & 0 & \frac{1}{5} & \frac{1}{5} & \frac{1}{5} & \frac{1}{5} &\frac{1}{5} & 0 & 0 \\
+0 & 0 & 0 & 0 & \frac{1}{5} & \frac{1}{5} & \frac{1}{5} & \frac{1}{5} &\frac{1}{5} & 0 \\
+0 & 0 & 0 & 0 & 0 & \frac{1}{5} & \frac{1}{5} & \frac{1}{5} & \frac{1}{5} &\frac{1}{5}  \\
+0 & 0 & 0 & 0 & 0 & 0 & \frac{1}{4} & \frac{1}{4} & \frac{1}{4} &\frac{1}{4}  \\
+0 & 0 & 0 & 0 & 0 & 0 & 0 & \frac{1}{3} & \frac{1}{3} &\frac{1}{3}  \\
+\end{pmatrix}
+\begin{pmatrix}
+y_1 \\ y_2 \\ y_3 \\y_4 \\ y_5 \\ y_6 \\ y_7 \\ y_8 \\ y_9 \\ y_{10}
+\end{pmatrix}
+$$
+- Then we can write the running mean as $\mathbf{\hat{s}}=\mathbf{S}\mathbf{Y}$.
+
+# Implementation
+
+```{r rmimpl, echo=TRUE }
+```
+
+
+# Constant-Span Running Mean with $k=13$
+
+```{r rm13plot}
+```
+
+# The Effect of Span
+
+```{r compare_span, echo=FALSE}
+```
+
+# Effect of $k$
+
+- We wish to examine the effect of $k$ on MSE:
+$$\text{MSE}(\hat{s}(x_i))=E \left( \left( s(x_i) - \sum_{j=i-(k-1)/2}^{i+(k-1)/2} \frac{Y_j}{k} \right)^2 \right)$$
+- Using the fact that $\text{MSE}(\hat{\theta})=\text{Var}(\hat{\theta}) + \text{Bias}^2(\hat{\theta})$, we get
+$$
+\text{MSE}(\hat{s}(x_i))= \text{Bias}^2(\hat{s}(x_i))+ \frac{1}{k^2} \sum_{j=i-(k-1)/2}^{i+(k-1)/2} \text{Var}\left(Y|X=x_j \right)
+$$
+- Thus as $k$ gets larger, the impact of variance decreases. 
+- Larger $k$ makes bias worse since $x_j$ far away from $x_i$ will have a larger difference.
+    - Bias towards $E(Y)$.
+
+# Visualizing the Bias and Variance Trade Off
+
+```{r bvplot, echo=FALSE}
+```
+
+# Cross Validation to Select $k$
+
+- We  select $k$ to minimize the residual mean squared error (RSS):
+$$
+\frac{\text{RSS}(\mathbf{\hat{s}})}{n}=\frac{1}{n} \sum_{i=1}^n (y_i - \hat{s}(x_i))^2
+$$
+- However, $\hat{s}(x_i)$ and $Y_i$ are correlated.
+- We introduce the cross-validated residual sum of squares, 
+$$
+\frac{\text{CVRSS}(\mathbf{\hat{s}})}{n}=\frac{1}{n} \sum_{i=1}^n \left( y_i - \hat{s}^{(\text{-}i)}(x_i) \right)^2
+$$
+- $\hat{s}^{(\text{-}i)}(x_i)$ is the value of the smooth when it is fitted omitting the $i$th data point.
+
+
+# Graph of Cross-Validation vs $k$
+
+```{r cvplot, echo=FALSE}
+```
+
+
+
+# Running Lines
+
+- Another type of smoother is a running line.
+- We simply run linear regression to the $k$ data points in $\mathcal{N}(x_i)$ to get $\ell_i(x)=\beta_0 + \beta_1x$, then $\hat{s}(x_i) = \ell_i(x_i)$.
+- Let $X_i= (\begin{array}{cc} \mathbf{1} & \mathbf{x}_i \end{array} )$ be the matrix composed of a column vector of 1's in the first columns and a column vector of $x_i \in \mathcal{N}(x_i)$ in the second column.
+- Let $\mathbf{H}_i = \mathbf{X}_i ( \mathbf{X}_i^\mathsf{T} \mathbf{X}_i )^{-1} \mathbf{X}_i$. Then the row of $H_i$ that corresponds to $x_i$ is the $i$th row of $S$
+
+# Running Lines and Running Polynomials
+
+```{r rlimpl, echo=TRUE}
+```
+
+# Running Line Result
+
+```{r rlplot, echo=FALSE}
+```
+
+# Cross validation of Running Line
+
+```{r rlcvplot, echo=FALSE}
+```
+
+#Summary
+
+- We have $Y=s(x)+\epsilon_i$
+- Since $E(Y|x)=s(x)$, we can use the local data to estimate $s(x)$. 
+- Linear smoothers are can be written $\mathbf{\hat{s}}=\mathbf{S}\mathbf{Y}$
+- Cross-Validation helps us choose the best span for constructing the smoothers.
+
+# Extra Slides
+
+# Cubic Spline
+
+```{r csplot, echo=FALSE, message=FALSE, warning=FALSE}
+```
+
+# Cubic Spline Cross-Validation
+
+```{r}
+```

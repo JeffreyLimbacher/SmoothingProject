@@ -31,3 +31,9 @@ vignettes/*.pdf
 # Temporary files created by R markdown
 *.utf8.md
 *.knit.md
+
+# Added by jeff 
+# I used data from the book "Computational Statistics" by Geof H. Givens and Jennifer A Hoeting 
+# the below folder contained the data, but I don't want to upload it to github, so I just ignore it
+
+Givens_Data/*
